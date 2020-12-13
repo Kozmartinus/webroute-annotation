@@ -3,17 +3,31 @@ package org.example.app;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.example.Routes;
+import org.example.WebRoute;
 
 public class App {
 
+    private static Map routes = new HashMap<>();
+
     public static void main(String[] args) throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
-        server.createContext("/test", new MyHandler());
+//        server.createContext("/test", new MyHandler());
+
+        for (Method method : Routes.class.getMethods()) {
+            if (method.isAnnotationPresent(WebRoute.class)) {
+                routes.put(method.getAnnotation(WebRoute.class).value(), method.invoke(Routes.class.getDeclaredConstructor().newInstance()));
+            }
+        }
+        
         server.setExecutor(null); // creates a default executor
         server.start();
     }
