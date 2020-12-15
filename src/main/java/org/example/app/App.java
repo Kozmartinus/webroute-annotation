@@ -20,22 +20,24 @@ public class App {
 
     public static void main(String[] args) throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
-//        server.createContext("/test", new MyHandler());
 
         for (Method method : Routes.class.getMethods()) {
             if (method.isAnnotationPresent(WebRoute.class)) {
-                routes.put(method.getAnnotation(WebRoute.class).value(), method.invoke(Routes.class.getDeclaredConstructor().newInstance()));
+                String route = method.getAnnotation(WebRoute.class).value();
+                routes.put(route, method.invoke(Routes.class.getDeclaredConstructor().newInstance()));
+                server.createContext(route, new MyHandler());
             }
         }
-        
-        server.setExecutor(null); // creates a default executor
+        server.setExecutor(null);
         server.start();
     }
 
     static class MyHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange t) throws IOException {
-            String response = "This is the response";
+
+            String response = (String) routes.get(t.getRequestURI().toString());
+
             t.sendResponseHeaders(200, response.length());
             OutputStream os = t.getResponseBody();
             os.write(response.getBytes());
